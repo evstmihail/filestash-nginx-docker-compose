@@ -1,0 +1,37 @@
+include    templates/configs/cache.conf;
+
+server {
+
+    listen ${NGINX_PORT} ssl;
+    server_name ${NGINX_HOST};
+
+    # SSL configuration
+    include    templates/configs/ssl.conf;
+
+    # file upload limit
+    client_max_body_size 1024M;
+
+    # redirect to https if schema was not specified in the url
+    error_page 497 https://$host:$server_port$request_uri;
+
+    location / {
+
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+        # set expire headers for content
+        expires $expires_content;
+
+        # proxy configuration
+        include    templates/configs/proxy.conf;
+
+        proxy_pass           http://${FILESTASH_HOST}:${FILESTASH_PORT};
+
+        location ~ ^/(assets|overrides)/ {
+
+            # set expire headers for assets
+            expires $expires_assets;
+
+            proxy_pass           http://${FILESTASH_HOST}:${FILESTASH_PORT};
+        }
+    }
+}

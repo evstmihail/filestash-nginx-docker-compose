@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  filestash:
+    container_name: filestash
+    image: machines/filestash
+    restart: unless-stopped
+    environment:
+    - APPLICATION_URL=https://${APP_HOST}:${APP_PORT}
+    volumes:
+    - ./fs-data/state:/app/data/state
+
+  reverse-proxy:
+    image: nginx:alpine
+    container_name: reverse-proxy
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    volumes:
+      - ./nginx-data/templates:/etc/nginx/templates
+      - ./nginx-data/certs:/etc/nginx/certs
+    environment:
+      - NGINX_HOST=${APP_HOST}
+      - NGINX_PORT=${APP_PORT}
+      - FILESTASH_HOST=filestash
+      - FILESTASH_PORT=8334
+    depends_on:
+      - filestash
